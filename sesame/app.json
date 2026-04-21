@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "Sesame",
+    "slug": "sesame",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "sesame",
+    "splash": {
+      "backgroundColor": "#FAFAF8"
+    },
+    "ios": {
+      "bundleIdentifier": "com.sesame.wallet",
+      "supportsTablet": false,
+      "infoPlist": {
+        "UIStatusBarStyle": "dark-content"
+      }
+    },
+    "android": {
+      "package": "com.sesame.wallet",
+      "adaptiveIcon": {
+        "backgroundColor": "#FAFAF8"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-brightness"
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Acces aux photos pour scanner vos billets."
+        }
+      ],
+      [
+        "expo-document-picker",
+        {}
+      ],
+      "expo-asset"
+    ],
+    "newArchEnabled": true
+  }
+}

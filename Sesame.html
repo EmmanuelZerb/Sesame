@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sesame — Wallet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg: #FAFAF8;
+  --bg-card: #FFFFFF;
+  --bg-subtle: #F2F1EE;
+  --border: #E8E6E1;
+  --text-1: #1A1916;
+  --text-2: #8A8780;
+  --text-3: #B8B5AF;
+  --accent: #1A1916;
+  --flight: #D4E8F5;
+  --flight-text: #0B3D5C;
+  --concert: #EFE0F5;
+  --concert-text: #4A1D6E;
+  --train: #D5EDE4;
+  --train-text: #0D4A2E;
+  --sport: #FDECD5;
+  --sport-text: #6B3000;
+  --theater: #FDF5D5;
+  --theater-text: #5C4500;
+  --other: #EEE;
+  --other-text: #444;
+  --radius-card: 20px;
+  --radius-sm: 12px;
+  --shadow-card: 0 4px 16px rgba(0,0,0,0.06);
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.07);
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: #DDDBD6; overflow: hidden; -webkit-font-smoothing: antialiased; }
+body { display: flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+button { cursor: pointer; -webkit-tap-highlight-color: transparent; font-family: inherit; }
+input, textarea { outline: none; font-family: inherit; }
+.scroll { scrollbar-width: none; -ms-overflow-style: none; }
+.scroll::-webkit-scrollbar { display: none; }
+
+.frame {
+  position: relative;
+  width: min(390px, 100vw);
+  height: min(844px, calc(100vh - 24px));
+  background: var(--bg);
+  border-radius: 44px;
+  overflow: hidden;
+  box-shadow: 0 0 0 10px #C8C5BF, 0 0 0 11px #B8B4AE, 0 28px 80px rgba(0,0,0,0.22);
+  isolation: isolate;
+}
+
+.island {
+  position: absolute; top: 8px; left: 50%;
+  transform: translateX(-50%);
+  width: 110px; height: 30px;
+  background: #111; border-radius: 16px;
+  z-index: 30;
+}
+
+.status {
+  position: absolute; top: 0; left: 0; right: 0; height: 48px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 28px 0;
+  font-size: 14px; font-weight: 600;
+  color: var(--text-1); z-index: 25;
+}
+.status-icons { display: flex; gap: 5px; align-items: center; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes sheetIn {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+</head>
+<body>
+<div class="frame" id="frame">
+  <div class="island"></div>
+  <div class="status">
+    <span>9:41</span>
+    <div class="status-icons">
+      <svg width="16" height="11" fill="none" viewBox="0 0 16 11"><path d="M8 2.2C10.6 2.2 12.9 3.2 14.6 4.9L16 3.5C13.9 1.3 11.1 0 8 0S2.1 1.3 0 3.5l1.4 1.4C3.1 3.2 5.4 2.2 8 2.2zM8 5.5c1.7 0 3.2.7 4.3 1.8l1.4-1.4C12.2 4.4 10.2 3.5 8 3.5S3.8 4.4 2.3 5.9l1.4 1.4C4.8 6.2 6.3 5.5 8 5.5zM8 8.8c.9 0 1.7.3 2.3.9L8 12 5.7 9.7C6.3 9.1 7.1 8.8 8 8.8z" fill="currentColor"/></svg>
+      <svg width="15" height="11" fill="none" viewBox="0 0 15 11"><rect x=".5" y="2" width="11" height="7" rx="1.5" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="3.5" width="8" height="4" rx=".5" fill="currentColor"/><path d="M13 4.5v2a1.5 1.5 0 0 0 0-2z" fill="currentColor"/></svg>
+    </div>
+  </div>
+  <div id="root" style="position:absolute;inset:0;overflow:hidden;"></div>
+</div>
+
+<script type="text/babel" data-presets="react">
+// ── Data Layer ─────────────────────────────────
+const { useState, useEffect, useMemo, useRef, useCallback } = React;
+
+const TYPE_META = {
+  flight:  { label: 'Flight',  labelFr: 'Vol',      icon: 'plane', bg: 'var(--flight)',  color: 'var(--flight-text)' },
+  concert: { label: 'Concert', labelFr: 'Concert',  icon: 'music', bg: 'var(--concert)', color: 'var(--concert-text)' },
+  train:   { label: 'Train',   labelFr: 'Train',    icon: 'train', bg: 'var(--train)',   color: 'var(--train-text)' },
+  sport:   { label: 'Sport',   labelFr: 'Sport',    icon: 'sport', bg: 'var(--sport)',   color: 'var(--sport-text)' },
+  theater: { label: 'Theater', labelFr: 'Theatre',  icon: 'theater', bg: 'var(--theater)', color: 'var(--theater-text)' },
+  other:   { label: 'Other',   labelFr: 'Autre',    icon: 'other', bg: 'var(--other)',   color: 'var(--other-text)' },
+};
+
+const TICKETS = [
+  { id: '1', type: 'flight', title: 'Paris \u2192 New York', subtitle: 'AF 447 \u00b7 Business', date: '2026-05-15', time: '10:45', venue: 'CDG Terminal 2E', seat: '3A', gate: 'K42', reference: 'XKPL29', isUsed: false },
+  { id: '2', type: 'concert', title: 'Bicep \u2014 Live A/V', subtitle: 'Accor Arena', date: '2026-05-03', time: '21:00', venue: 'Accor Arena \u00b7 Paris', seat: 'Fosse', gate: '', reference: 'TM-889234', isUsed: false },
+  { id: '3', type: 'train', title: 'Paris \u2192 Lyon', subtitle: 'TGV Inoui 6621 \u00b7 1\u00e8re', date: '2026-04-28', time: '07:52', venue: 'Gare de Lyon', seat: 'Voiture 4 \u00b7 12A', gate: '', reference: 'SNCF-4421PL', isUsed: false },
+  { id: '4', type: 'sport', title: 'PSG \u2014 Inter Milan', subtitle: 'UEFA Champions League', date: '2026-04-10', time: '21:00', venue: 'Parc des Princes \u00b7 Paris', seat: 'Tribune Boulogne \u00b7 K12', gate: '', reference: 'UEFA-8821X', isUsed: true },
+  { id: '5', type: 'concert', title: 'Halcyon Festival \u00b7 J2', subtitle: 'Plaine de jeux \u2014 Vincennes', date: '2026-06-21', time: '14:00', venue: 'Bois de Vincennes', seat: 'G\u00e9n\u00e9ral', gate: '', reference: 'HALC-DAY2-VIP', isUsed: false },
+];
+
+function parseDateStr(s) { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); }
+function formatDay(s) { return String(parseDateStr(s).getDate()).padStart(2,'0'); }
+function formatMonth(s, lang='fr') { return parseDateStr(s).toLocaleString(lang==='fr'?'fr-FR':'en-US',{month:'short'}).toUpperCase().replace('.',''); }
+function formatFull(s, lang='fr') { return parseDateStr(s).toLocaleDateString(lang==='fr'?'fr-FR':'en-US',{weekday:'short',day:'numeric',month:'long',year:'numeric'}); }
+
+function urgencyBadge(dateStr, isUsed) {
+  if (isUsed) return { text: 'USED', color: '#8A8780', bg: '#F2F1EE' };
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = Math.round((parseDateStr(dateStr) - today) / 86400000);
+  if (diff < 0) return { text: 'PASSED', color: '#B8B5AF', bg: '#F2F1EE' };
+  if (diff === 0) return { text: 'TODAY', color: '#C0392B', bg: '#FDECEA' };
+  if (diff === 1) return { text: 'TOMORROW', color: '#C0392B', bg: '#FDECEA' };
+  if (diff <= 6) return { text: `IN ${diff}D`, color: '#7C5000', bg: '#FFF3E0' };
+  return null;
+}
+
+function isPast(t) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  return t.isUsed || parseDateStr(t.date) < today;
+}
+
+function inferType(title) {
+  const t = title.toLowerCase();
+  if (/\u2192|->|flight|vol |cdg|lhr|jfk|nrt|dxb|\d{3}/.test(t)) return 'flight';
+  if (/tgv|ter|inoui|sncf|intercit|train|eurostar/.test(t)) return 'train';
+  if (/festival|concert|live|tour|dj|set|music/.test(t)) return 'concert';
+  if (/psg|om|ol|ucl|ligue|match|foot|rugby|tennis|sport/.test(t)) return 'sport';
+  if (/th\u00e9\u00e2tre|theater|op\u00e9ra|ballet|pi\u00e8ce|com\u00e9die/.test(t)) return 'theater';
+  return null;
+}
+
+function makeQR(seed, n=21) {
+  let h = 2166136261 >>> 0;
+  for (let i=0; i<seed.length; i++) { h ^= seed.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  const rnd = () => { h = (Math.imul(h, 1664525) + 1013904223) >>> 0; return h / 0xffffffff; };
+  const g = Array.from({length:n}, () => Array.from({length:n}, () => rnd() > 0.5 ? 1 : 0));
+  const finder = (r, c) => {
+    for (let y=0;y<7;y++) for (let x=0;x<7;x++) {
+      const on = x===0||x===6||y===0||y===6||(x>=2&&x<=4&&y>=2&&y<=4);
+      if (r+y<n && c+x<n) g[r+y][c+x] = on ? 1 : 0;
+    }
+  };
+  finder(0,0); finder(0,n-7); finder(n-7,0);
+  return g;
+}
+
+// ── Shared UI Primitives ───────────────────────
+const F = {
+  title:  { fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 700 },
+  semi:   { fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 600 },
+  body:   { fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 400 },
+  medium: { fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontWeight: 500 },
+  mono:   { fontFamily: "'IBM Plex Mono', monospace", fontWeight: 400 },
+  mono5:  { fontFamily: "'IBM Plex Mono', monospace", fontWeight: 500 },
+};
+
+const Icon = {
+  Plane:   ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5a2.12 2.12 0 0 0-3-3L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3-3-.5c-.3 0-.7.1-.9.4l-.4.5c-.3.4-.2 1 .2 1.3L6 19l1.5 2.5c.3.4.9.5 1.3.2l.5-.4c.3-.2.4-.6.4-.9L9 17l3-2 3.7 5.3c.3.4.8.5 1.3.3l.5-.3c.4-.2.6-.6.5-1.1z"/></svg>,
+  Music:   ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>,
+  Train:   ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="3" width="16" height="16" rx="2"/><path d="M4 11h16"/><circle cx="8.5" cy="15" r="1"/><circle cx="15.5" cy="15" r="1"/><path d="M8 19l-2 3M16 19l2 3"/></svg>,
+  Sport:   ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v4m0 10v4M3 12h4m10 0h4"/></svg>,
+  Theater: ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6c0 8 4 14 9 14s9-6 9-14c0-1-1-2-2-2H5c-1 0-2 1-2 2z"/><circle cx="9" cy="10" r="1" fill={c}/><circle cx="15" cy="10" r="1" fill={c}/><path d="M9 14c1 1 5 1 6 0"/></svg>,
+  Other:   ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>,
+  Search:  ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>,
+  Plus:    ({s=24,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.2" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>,
+  ChevR:   ({s=18,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 6 6 6-6 6"/></svg>,
+  ChevL:   ({s=18,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 6-6 6 6 6"/></svg>,
+  X:       ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>,
+  Home:    ({s=22,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1z"/></svg>,
+  Archive: ({s=22,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="5" rx="1"/><path d="M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/><path d="M10 13h4"/></svg>,
+  Sun:     ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>,
+  Share:   ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12M7 8l5-5 5 5M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>,
+  Check:   ({s=20,c='currentColor'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>,
+};
+
+const ICON_MAP = { flight: Icon.Plane, concert: Icon.Music, train: Icon.Train, sport: Icon.Sport, theater: Icon.Theater, other: Icon.Other };
+function TypeIcon({ type, s=20, c='currentColor' }) {
+  return React.createElement(ICON_MAP[type] || Icon.Other, { s, c });
+}
+
+// ── Badge ──────────────────────────────────────
+function Badge({ text, color, bg }) {
+  return (
+    <span style={{ ...F.mono5, fontSize: 9, letterSpacing: '.12em', textTransform: 'uppercase', color, background: bg, padding: '3px 7px', borderRadius: 6, whiteSpace: 'nowrap' }}>
+      {text}
+    </span>
+  );
+}
+
+// ── Dashed Divider ─────────────────────────────
+function Dash({ mx = -20 }) {
+  return <div style={{ height: 1, margin: `0 ${mx}px`, backgroundImage: 'repeating-linear-gradient(90deg, var(--border) 0 5px, transparent 5px 10px)' }} />;
+}
+
+// ── QR Code ────────────────────────────────────
+function QRCode({ seed, size = 200 }) {
+  const grid = useMemo(() => makeQR(seed), [seed]);
+  const n = grid.length;
+  const cell = size / n;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: 'block', borderRadius: 6 }}>
+      <rect width={size} height={size} fill="#fff"/>
+      {grid.map((row, y) => row.map((v, x) => v
+        ? <rect key={`${x}-${y}`} x={x*cell} y={y*cell} width={cell-0.3} height={cell-0.3} fill="#1A1916"/>
+        : null
+      ))}
+    </svg>
+  );
+}
+
+// ── Large TicketCard ───────────────────────────
+function CardLarge({ ticket, onClick, lang='fr' }) {
+  const m = TYPE_META[ticket.type];
+  const badge = urgencyBadge(ticket.date, ticket.isUsed);
+  const past = isPast(ticket);
+
+  return (
+    <div
+      onClick={onClick}
+      role="button"
+      style={{
+        width: 272, flexShrink: 0,
+        background: m.bg, borderRadius: 20,
+        padding: '18px 18px 16px',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.07)',
+        cursor: 'pointer', opacity: past ? 0.55 : 1,
+        transition: 'transform 150ms ease',
+        scrollSnapAlign: 'start', userSelect: 'none',
+      }}
+      onPointerDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
+      onPointerUp={e => e.currentTarget.style.transform = 'scale(1)'}
+      onPointerLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <TypeIcon type={ticket.type} s={16} c={m.color} />
+          <span style={{ ...F.semi, fontSize: 11, letterSpacing: '.1em', textTransform: 'uppercase', color: m.color }}>
+            {lang === 'fr' ? m.labelFr : m.label}
+          </span>
+        </div>
+        <div style={{ background: '#fff', borderRadius: 10, padding: '5px 9px', textAlign: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
+          <div style={{ ...F.title, fontSize: 20, color: 'var(--text-1)', lineHeight: 1 }}>{formatDay(ticket.date)}</div>
+          <div style={{ ...F.semi, fontSize: 9, letterSpacing: '.1em', color: 'var(--text-2)', marginTop: 1, textTransform: 'uppercase' }}>{formatMonth(ticket.date, lang)}</div>
+        </div>
+      </div>
+
+      <div style={{ ...F.title, fontSize: 20, color: 'var(--text-1)', lineHeight: 1.15, marginBottom: 3 }}>{ticket.title}</div>
+      <div style={{ ...F.medium, fontSize: 12, color: m.color, marginBottom: 16 }}>{ticket.subtitle}</div>
+      <Dash />
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, gap: 6 }}>
+        <div style={{ ...F.medium, fontSize: 12, color: 'var(--text-2)', display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
+          <span style={{ fontSize: 11 }}>&#x1f550;</span>
+          <span>{ticket.time}</span>
+          <span style={{ color: 'var(--text-3)' }}>&middot;</span>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ticket.venue.split('\u00b7')[0].trim()}</span>
+        </div>
+        {badge && <Badge {...badge} />}
+      </div>
+    </div>
+  );
+}
+
+// ── Compact TicketCard ─────────────────────────
+function CardCompact({ ticket, onClick, lang='fr' }) {
+  const m = TYPE_META[ticket.type];
+  const badge = urgencyBadge(ticket.date, ticket.isUsed);
+  const past = isPast(ticket);
+
+  return (
+    <div
+      onClick={onClick}
+      role="button"
+      style={{
+        display: 'flex', alignItems: 'center', gap: 12,
+        padding: '13px 14px',
+        background: 'var(--bg-card)',
+        borderRadius: 16,
+        border: '1px solid var(--border)',
+        cursor: 'pointer', opacity: past ? 0.5 : 1,
+        transition: 'transform 150ms ease', userSelect: 'none',
+      }}
+      onPointerDown={e => e.currentTarget.style.transform = 'scale(0.99)'}
+      onPointerUp={e => e.currentTarget.style.transform = 'scale(1)'}
+      onPointerLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+    >
+      <div style={{ width: 42, height: 42, flexShrink: 0, background: m.bg, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <TypeIcon type={ticket.type} s={19} c={m.color} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ ...F.semi, fontSize: 14, color: 'var(--text-1)', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ticket.title}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 3 }}>
+          <span style={{ ...F.semi, fontSize: 10, letterSpacing: '.07em', textTransform: 'uppercase', color: m.color }}>{lang === 'fr' ? m.labelFr : m.label}</span>
+          <span style={{ color: 'var(--text-3)', fontSize: 11 }}>&middot;</span>
+          <span style={{ ...F.body, fontSize: 12, color: 'var(--text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ticket.subtitle}</span>
+        </div>
+      </div>
+      <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ ...F.title, fontSize: 17, color: 'var(--text-1)', lineHeight: 1 }}>{formatDay(ticket.date)}</div>
+          <div style={{ ...F.semi, fontSize: 9, letterSpacing: '.08em', color: 'var(--text-2)', textTransform: 'uppercase' }}>{formatMonth(ticket.date, lang)}</div>
+        </div>
+        {badge && <Badge {...badge} />}
+      </div>
+    </div>
+  );
+}
+
+// ── Search Bar ─────────────────────────────────
+function SearchBar({ value, onChange, placeholder }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '11px 13px', background: 'var(--bg-subtle)', borderRadius: 12 }}>
+      <Icon.Search s={16} c="var(--text-3)" />
+      <input
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        style={{ flex: 1, border: 'none', background: 'transparent', ...F.body, fontSize: 14, color: 'var(--text-1)' }}
+      />
+      {value && (
+        <button onClick={() => onChange('')} style={{ background: 'none', border: 'none', display: 'flex', color: 'var(--text-2)', padding: 0 }}>
+          <Icon.X s={15} c="currentColor" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ── Filter Chip ────────────────────────────────
+function Chip({ active, onClick, children }) {
+  return (
+    <button onClick={onClick} style={{
+      padding: '7px 13px', borderRadius: 999,
+      border: `1.5px solid ${active ? 'var(--text-1)' : 'var(--border)'}`,
+      background: active ? 'var(--text-1)' : 'var(--bg-card)',
+      color: active ? '#fff' : 'var(--text-2)',
+      ...F[active ? 'semi' : 'medium'], fontSize: 12,
+      whiteSpace: 'nowrap', cursor: 'pointer',
+      transition: 'all 150ms ease'
+    }}>{children}</button>
+  );
+}
+
+// ── Section Header ─────────────────────────────
+function SectionHead({ title, count }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px 10px' }}>
+      <span style={{ ...F.semi, fontSize: 15, color: 'var(--text-1)' }}>{title}</span>
+      <span style={{ ...F.mono, fontSize: 11, color: 'var(--text-3)' }}>{String(count).padStart(2, '0')}</span>
+    </div>
+  );
+}
+
+// ── Tab Bar ────────────────────────────────────
+function TabBar({ tab, setTab, onAdd }) {
+  const T = ({ id, icon, label }) => {
+    const active = tab === id;
+    return (
+      <button onClick={() => setTab(id)} style={{
+        flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+        gap: 3, paddingTop: 10, paddingBottom: 0,
+        background: 'none', border: 'none',
+        borderTop: `2px solid ${active ? 'var(--text-1)' : 'transparent'}`,
+        color: active ? 'var(--text-1)' : 'var(--text-3)',
+        ...F[active ? 'semi' : 'body'], fontSize: 10, cursor: 'pointer',
+        transition: 'color 150ms',
+      }}>
+        {React.createElement(Icon[icon], { s: 21, c: 'currentColor' })}
+        {label}
+      </button>
+    );
+  };
+
+  return (
+    <div style={{
+      position: 'absolute', bottom: 0, left: 0, right: 0,
+      height: 80, background: 'rgba(250,250,248,0.96)',
+      borderTop: '1px solid var(--border)',
+      display: 'flex', alignItems: 'flex-start',
+      paddingBottom: 14, zIndex: 20
+    }}>
+      <T id="home" icon="Home" label="Sesame" />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 8 }}>
+        <button
+          onClick={onAdd}
+          aria-label="Ajouter un billet"
+          style={{
+            width: 46, height: 46, borderRadius: '50%',
+            background: 'var(--text-1)', border: 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', marginBottom: 2,
+            boxShadow: '0 4px 14px rgba(0,0,0,0.2)',
+            transition: 'transform 150ms ease'
+          }}
+          onPointerDown={e => e.currentTarget.style.transform = 'scale(0.9)'}
+          onPointerUp={e => e.currentTarget.style.transform = 'scale(1)'}
+          onPointerLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+        >
+          <Icon.Plus s={22} c="#fff" />
+        </button>
+        <span style={{ ...F.body, fontSize: 10, color: 'var(--text-3)' }}>Ajouter</span>
+      </div>
+      <T id="library" icon="Archive" label="Archive" />
+    </div>
+  );
+}
+
+// ── Detail helpers ─────────────────────────────
+function InfoChip({ label, value }) {
+  return (
+    <div>
+      <div style={{ ...F.semi, fontSize: 9, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--text-2)', marginBottom: 3 }}>{label}</div>
+      <div style={{ ...F.title, fontSize: 15, color: 'var(--text-1)' }}>{value}</div>
+    </div>
+  );
+}
+
+function Divider() {
+  return <div style={{ height: 1, background: 'var(--border)', margin: '0 16px' }} />;
+}
+
+function DetailRow({ label, value, mono }) {
+  return (
+    <div style={{ padding: '13px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
+      <span style={{ ...F.body, fontSize: 13, color: 'var(--text-2)', flexShrink: 0 }}>{label}</span>
+      <span style={{ ...(mono ? F.mono5 : F.semi), fontSize: mono ? 12 : 13, color: 'var(--text-1)', textAlign: 'right' }}>{value}</span>
+    </div>
+  );
+}
+
+function ActionBtn({ icon, children }) {
+  return (
+    <button style={{
+      padding: '12px', borderRadius: 12, border: '1.5px solid var(--border)',
+      background: 'var(--bg-card)', ...F.medium, fontSize: 13, color: 'var(--text-1)',
+      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7
+    }}>
+      {React.createElement(Icon[icon], { s: 15, c: 'currentColor' })}
+      {children}
+    </button>
+  );
+}
+
+// ── HOME SCREEN ────────────────────────────────
+function HomeScreen({ tickets, onOpen, onAdd, lang = 'fr' }) {
+  const [q, setQ] = useState('');
+  const [filter, setFilter] = useState('all');
+
+  const filtered = useMemo(() =>
+    tickets
+      .filter(t => filter === 'all' || t.type === filter)
+      .filter(t => {
+        if (!q) return true;
+        const s = q.toLowerCase();
+        return t.title.toLowerCase().includes(s) || t.subtitle.toLowerCase().includes(s) || t.venue.toLowerCase().includes(s);
+      }),
+    [tickets, q, filter]
+  );
+
+  const upcoming = useMemo(() =>
+    filtered.filter(t => !isPast(t)).sort((a, b) => parseDateStr(a.date) - parseDateStr(b.date)),
+    [filtered]
+  );
+
+  const allSorted = useMemo(() => {
+    const fut = filtered.filter(t => !isPast(t)).sort((a, b) => parseDateStr(a.date) - parseDateStr(b.date));
+    const past = filtered.filter(t => isPast(t)).sort((a, b) => parseDateStr(b.date) - parseDateStr(a.date));
+    return [...fut, ...past];
+  }, [filtered]);
+
+  return (
+    <div style={{ position: 'absolute', inset: '0 0 80px 0', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+      <div style={{ flexShrink: 0, paddingTop: 52 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', padding: '12px 24px 0' }}>
+          <h1 style={{ ...F.title, fontSize: 28, color: 'var(--text-1)', letterSpacing: '-.03em' }}>Sesame</h1>
+          <span style={{ ...F.body, fontSize: 13, color: 'var(--text-2)' }}>
+            {tickets.length} {tickets.length === 1 ? 'pass' : 'passes'}
+          </span>
+        </div>
+        <div style={{ padding: '12px 24px 0' }}>
+          <SearchBar value={q} onChange={setQ} placeholder={lang === 'fr' ? 'Rechercher billets, lieux\u2026' : 'Search tickets, venues\u2026'} />
+        </div>
+        <div className="scroll" style={{ display: 'flex', gap: 7, padding: '10px 24px 2px', overflowX: 'auto' }}>
+          <Chip active={filter === 'all'} onClick={() => setFilter('all')}>{lang === 'fr' ? 'Tous' : 'All'}</Chip>
+          {Object.entries(TYPE_META).filter(([k]) => k !== 'other').map(([k, m]) => (
+            <Chip key={k} active={filter === k} onClick={() => setFilter(k)}>{lang === 'fr' ? m.labelFr : m.label}</Chip>
+          ))}
+        </div>
+      </div>
+
+      <div className="scroll" style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+        {tickets.length === 0
+          ? <EmptyState onAdd={onAdd} lang={lang} />
+          : <>
+              {upcoming.length > 0 && (
+                <div>
+                  <SectionHead title={lang === 'fr' ? '\u00c0 venir' : 'Up next'} count={upcoming.length} />
+                  <div className="scroll" style={{
+                    display: 'flex', gap: 10, padding: '0 0 4px',
+                    paddingLeft: 32, paddingRight: 'calc((100% - 272px) / 2)',
+                    overflowX: 'auto', scrollSnapType: 'x mandatory', scrollPaddingInline: '32px',
+                  }}>
+                    {upcoming.map(t => <CardLarge key={t.id} ticket={t} onClick={() => onOpen(t)} lang={lang} />)}
+                  </div>
+                </div>
+              )}
+              <div>
+                <SectionHead title={lang === 'fr' ? 'Tous les billets' : 'All tickets'} count={allSorted.length} />
+                {allSorted.length === 0 && (
+                  <p style={{ padding: '24px', ...F.body, fontSize: 14, color: 'var(--text-3)', textAlign: 'center' }}>
+                    {lang === 'fr' ? `Aucun r\u00e9sultat pour "${q}"` : `No results for "${q}"`}
+                  </p>
+                )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 24px 24px' }}>
+                  {allSorted.map(t => <CardCompact key={t.id} ticket={t} onClick={() => onOpen(t)} lang={lang} />)}
+                </div>
+              </div>
+            </>
+        }
+      </div>
+    </div>
+  );
+}
+
+function EmptyState({ onAdd, lang }) {
+  return (
+    <div style={{ padding: '56px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18, textAlign: 'center' }}>
+      <svg width="110" height="90" viewBox="0 0 110 90" fill="none">
+        <rect x="12" y="22" width="86" height="50" rx="10" fill="var(--bg-subtle)" stroke="var(--border)" strokeWidth="1.5" strokeDasharray="5 4"/>
+        <rect x="24" y="36" width="34" height="6" rx="3" fill="var(--border)"/>
+        <rect x="24" y="48" width="22" height="4" rx="2" fill="var(--border)" opacity=".6"/>
+        <circle cx="80" cy="48" r="10" fill="none" stroke="var(--border)" strokeWidth="1.5"/>
+        <path d="M77 48h6M80 45v6" stroke="var(--border)" strokeWidth="1.5" strokeLinecap="round"/>
+      </svg>
+      <div>
+        <h3 style={{ ...F.title, fontSize: 20, color: 'var(--text-1)', marginBottom: 6 }}>
+          {lang === 'fr' ? 'Votre Sesame est vide' : 'Your Sesame is empty'}
+        </h3>
+        <p style={{ ...F.body, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.55, maxWidth: 220 }}>
+          {lang === 'fr' ? 'Ajoutez vos billets \u2014 vols, concerts, trains. Tout au m\u00eame endroit.' : 'Add your tickets \u2014 flights, concerts, trains. All in one place.'}
+        </p>
+      </div>
+      <button onClick={onAdd} style={{
+        padding: '11px 18px', borderRadius: 11, background: 'var(--text-1)', border: 'none',
+        color: '#fff', ...F.semi, fontSize: 13, cursor: 'pointer',
+        display: 'flex', alignItems: 'center', gap: 7
+      }}>
+        <Icon.Plus s={15} c="#fff" />
+        {lang === 'fr' ? 'Ajouter un billet' : 'Add a ticket'}
+      </button>
+    </div>
+  );
+}
+
+// ── TICKET DETAIL ──────────────────────────────
+function TicketDetail({ ticket, onClose, lang = 'fr' }) {
+  const m = TYPE_META[ticket.type];
+  const badge = urgencyBadge(ticket.date, ticket.isUsed);
+  const sheetRef = useRef(null);
+  const startY = useRef(null);
+
+  const onTouchStart = useCallback(e => { startY.current = e.touches[0].clientY; }, []);
+  const onTouchMove = useCallback(e => {
+    const dy = e.touches[0].clientY - startY.current;
+    if (dy > 0 && sheetRef.current) sheetRef.current.style.transform = `translateY(${dy}px)`;
+  }, []);
+  const onTouchEnd = useCallback(e => {
+    const dy = e.changedTouches[0].clientY - startY.current;
+    if (dy > 80) { onClose(); }
+    else if (sheetRef.current) {
+      sheetRef.current.style.transition = 'transform 200ms ease';
+      sheetRef.current.style.transform = 'translateY(0)';
+      setTimeout(() => { if (sheetRef.current) sheetRef.current.style.transition = ''; }, 210);
+    }
+  }, [onClose]);
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(26,25,22,0.28)', zIndex: 50, animation: 'fadeIn 200ms ease' }} />
+      <div
+        ref={sheetRef}
+        onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
+        style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0,
+          background: 'var(--bg)', borderTopLeftRadius: 26, borderTopRightRadius: 26,
+          zIndex: 60, maxHeight: '91%', display: 'flex', flexDirection: 'column',
+          animation: 'sheetIn 300ms cubic-bezier(0.22,1,0.36,1)',
+          boxShadow: '0 -4px 40px rgba(0,0,0,0.1)'
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 4px', flexShrink: 0 }}>
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--border)' }} />
+        </div>
+
+        <div className="scroll" style={{ overflowY: 'auto', padding: '4px 22px 32px', flex: 1 }}>
+          <div style={{ background: m.bg, borderRadius: 18, padding: '18px', marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 14 }}>
+              <TypeIcon type={ticket.type} s={16} c={m.color} />
+              <span style={{ ...F.semi, fontSize: 11, letterSpacing: '.1em', textTransform: 'uppercase', color: m.color }}>
+                {lang === 'fr' ? m.labelFr : m.label}
+              </span>
+              {badge && <div style={{ marginLeft: 'auto' }}><Badge {...badge} /></div>}
+            </div>
+            <h1 style={{ ...F.title, fontSize: 24, letterSpacing: '-.025em', color: 'var(--text-1)', lineHeight: 1.1, marginBottom: 4 }}>{ticket.title}</h1>
+            <p style={{ ...F.medium, fontSize: 13, color: m.color, marginBottom: 14 }}>{ticket.subtitle}</p>
+            <div style={{ background: 'rgba(255,255,255,0.72)', borderRadius: 12, padding: '11px 14px', display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+              <InfoChip label={lang === 'fr' ? 'Date' : 'Date'} value={`${formatDay(ticket.date)} ${formatMonth(ticket.date, lang)}`} />
+              <InfoChip label={lang === 'fr' ? 'Heure' : 'Time'} value={ticket.time} />
+              {ticket.gate && <InfoChip label={lang === 'fr' ? 'Porte' : 'Gate'} value={ticket.gate} />}
+              {ticket.seat && <InfoChip label={lang === 'fr' ? 'Si\u00e8ge' : 'Seat'} value={ticket.seat} />}
+            </div>
+          </div>
+
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 18, padding: '22px', marginBottom: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+            <Dash mx={0} />
+            <QRCode seed={ticket.reference} size={196} />
+            <span style={{ ...F.mono5, fontSize: 13, letterSpacing: '.08em', color: 'var(--text-1)' }}>{ticket.reference}</span>
+            <Dash mx={0} />
+          </div>
+
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 18, overflow: 'hidden', marginBottom: 14 }}>
+            <DetailRow label={lang === 'fr' ? 'Date compl\u00e8te' : 'Full date'} value={formatFull(ticket.date, lang)} />
+            <Divider />
+            <DetailRow label={lang === 'fr' ? 'Lieu' : 'Venue'} value={ticket.venue} />
+            {ticket.seat && <><Divider /><DetailRow label={lang === 'fr' ? 'Si\u00e8ge' : 'Seat'} value={ticket.seat} /></>}
+            {ticket.gate && <><Divider /><DetailRow label={lang === 'fr' ? 'Porte' : 'Gate'} value={ticket.gate} /></>}
+            <Divider />
+            <DetailRow label="Ref." value={ticket.reference} mono />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <ActionBtn icon="Sun">{lang === 'fr' ? 'Luminosit\u00e9 max' : 'Max brightness'}</ActionBtn>
+            <ActionBtn icon="Share">{lang === 'fr' ? 'Partager' : 'Share'}</ActionBtn>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── ADD TICKET ─────────────────────────────────
+function FG({ label, children }) {
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ ...F.semi, fontSize: 10, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--text-2)', marginBottom: 6 }}>{label}</div>
+      {children}
+    </div>
+  );
+}
+
+function SF({ value, onChange, placeholder, type = 'text', large, mono, autoFocus }) {
+  return (
+    <input
+      type={type} value={value} placeholder={placeholder} autoFocus={autoFocus}
+      onChange={e => onChange(e.target.value)}
+      style={{
+        width: '100%', padding: large ? '14px' : '11px 13px',
+        borderRadius: 11, border: '1.5px solid var(--border)',
+        background: 'var(--bg-card)',
+        ...(mono ? F.mono : large ? F.title : F.body),
+        fontSize: large ? 17 : 14, color: 'var(--text-1)', colorScheme: 'light',
+        transition: 'border-color 150ms'
+      }}
+      onFocus={e => e.currentTarget.style.borderColor = 'var(--text-1)'}
+      onBlur={e => e.currentTarget.style.borderColor = 'var(--border)'}
+    />
+  );
+}
+
+function AddSheet({ open, onClose, onAdd, lang = 'fr' }) {
+  const [step, setStep] = useState(1);
+  const [type, setType] = useState('flight');
+  const [title, setTitle] = useState('');
+  const [subtitle, setSubtitle] = useState('');
+  const [date, setDate] = useState('');
+  const [time, setTime] = useState('20:00');
+  const [venue, setVenue] = useState('');
+  const [seat, setSeat] = useState('');
+  const [gate, setGate] = useState('');
+  const [reference, setReference] = useState('');
+  const [scanning, setScanning] = useState(false);
+  const fileRef = useRef(null);
+
+  useEffect(() => {
+    if (open) {
+      setStep(1); setTitle(''); setSubtitle(''); setVenue(''); setSeat(''); setGate(''); setReference('');
+      const d = new Date(Date.now() + 7 * 86400000);
+      setDate(d.toISOString().slice(0, 10));
+      setTime('20:00');
+    }
+  }, [open]);
+
+  useEffect(() => { const t = inferType(title); if (t) setType(t); }, [title]);
+
+  const preview = {
+    id: '_p', type, title: title || (lang === 'fr' ? "Nom de l'\u00e9v\u00e9nement" : 'Event name'),
+    subtitle: subtitle || 'Subtitle', isUsed: false,
+    date: date || new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
+    time, venue: venue || 'Lieu', seat, gate,
+    reference: reference || 'REF-0000',
+  };
+
+  const canNext = () => step === 2 ? title.length > 0 : step === 3 ? date.length > 0 : true;
+  const next = () => { if (step < 5) setStep(s => s + 1); };
+  const back = () => { if (step > 1) setStep(s => s - 1); };
+  const confirm = () => onAdd({
+    ...preview,
+    id: 't' + Math.random().toString(36).slice(2, 9),
+    reference: reference || 'SES-' + Math.random().toString(36).slice(2, 8).toUpperCase()
+  });
+
+  const L = {
+    fr: { next: 'Suivant', confirm: 'Ajouter \u00e0 Sesame', type: 'Type de billet', event: "Nom de l'\u00e9v\u00e9nement", sub: 'Sous-titre (optionnel)', details: 'Informations compl\u00e9mentaires', preview: 'Aper\u00e7u', venue: 'Lieu', seat: 'Si\u00e8ge (optionnel)', gate: 'Porte (optionnel)', ref: 'R\u00e9f\u00e9rence (optionnel)' },
+    en: { next: 'Next', confirm: 'Add to Sesame', type: 'Ticket type', event: 'Event name', sub: 'Subtitle (optional)', details: 'Additional details', preview: 'Preview', venue: 'Venue', seat: 'Seat (optional)', gate: 'Gate (optional)', ref: 'Reference (optional)' }
+  }[lang];
+
+  if (!open) return null;
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(26,25,22,0.28)', zIndex: 70, animation: 'fadeIn 200ms ease' }} />
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        background: 'var(--bg)', borderTopLeftRadius: 26, borderTopRightRadius: 26,
+        zIndex: 80, maxHeight: '91%', display: 'flex', flexDirection: 'column',
+        animation: 'sheetIn 300ms cubic-bezier(0.22,1,0.36,1)',
+        boxShadow: '0 -4px 40px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 0', flexShrink: 0 }}>
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--border)' }} />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 22px 8px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {step > 1 && (
+              <button onClick={back} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', color: 'var(--text-2)' }}>
+                <Icon.ChevL s={20} c="currentColor" />
+              </button>
+            )}
+            <h2 style={{ ...F.title, fontSize: 18, color: 'var(--text-1)' }}>
+              {lang === 'fr' ? 'Nouveau billet' : 'New ticket'}
+            </h2>
+          </div>
+          <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--bg-subtle)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Icon.X s={15} c="var(--text-2)" />
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 5, marginBottom: 10, flexShrink: 0 }}>
+          {[1, 2, 3, 4, 5].map(i => (
+            <div key={i} style={{ width: i === step ? 20 : 6, height: 5, borderRadius: 3, background: i <= step ? 'var(--text-1)' : 'var(--border)', transition: 'all 200ms ease' }} />
+          ))}
+        </div>
+
+        <div className="scroll" style={{ flex: 1, overflowY: 'auto', padding: '0 22px', minHeight: 0 }}>
+          {step === 1 && (
+            <div style={{ animation: 'fadeUp .2s ease' }}>
+              <p style={{ ...F.medium, fontSize: 13, color: 'var(--text-2)', marginBottom: 14 }}>{L.type}</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 9, marginBottom: 16 }}>
+                {Object.entries(TYPE_META).map(([k, m]) => {
+                  const active = type === k;
+                  return (
+                    <button key={k} onClick={() => setType(k)} style={{
+                      padding: '13px 8px', borderRadius: 14,
+                      border: `1.5px solid ${active ? 'var(--text-1)' : 'var(--border)'}`,
+                      background: active ? m.bg : 'var(--bg-card)',
+                      cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
+                      transition: 'all 150ms ease'
+                    }}>
+                      <TypeIcon type={k} s={19} c={active ? m.color : 'var(--text-3)'} />
+                      <span style={{ ...F[active ? 'semi' : 'body'], fontSize: 11, color: active ? 'var(--text-1)' : 'var(--text-2)' }}>
+                        {lang === 'fr' ? m.labelFr : m.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div style={{ marginTop: 8 }}>
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileRef}
+                  style={{ display: 'none' }}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setScanning(true);
+                    try {
+                      const reader = new FileReader();
+                      reader.onload = async (evt) => {
+                        // Scanner placeholder — works when run in Claude Design
+                        if (window.claude && window.claude.complete) {
+                          const base64 = evt.target.result;
+                          const prompt = `Analyze this ticket image and extract: title, subtitle, date (YYYY-MM-DD), time (HH:MM), venue, seat, gate, reference. Return JSON only.`;
+                          const result = await window.claude.complete({
+                            messages: [{ role: 'user', content: [
+                              { type: 'image', source: { type: 'base64', media_type: file.type, data: base64.split(',')[1] } },
+                              { type: 'text', text: prompt }
+                            ]}]
+                          });
+                          const data = JSON.parse(result.replace(/```json\n?|\n?```/g, '').trim());
+                          if (data.title) setTitle(data.title);
+                          if (data.subtitle) setSubtitle(data.subtitle);
+                          if (data.date) setDate(data.date);
+                          if (data.time) setTime(data.time);
+                          if (data.venue) setVenue(data.venue);
+                          if (data.seat) setSeat(data.seat);
+                          if (data.gate) setGate(data.gate);
+                          if (data.reference) setReference(data.reference);
+                          setStep(5);
+                        } else {
+                          alert(lang === 'fr' ? 'Scanner non disponible hors Claude Design. Saisissez manuellement.' : 'Scanner not available outside Claude Design. Enter manually.');
+                        }
+                      };
+                      reader.readAsDataURL(file);
+                    } finally {
+                      setScanning(false);
+                      e.target.value = '';
+                    }
+                  }}
+                />
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  disabled={scanning}
+                  style={{
+                    width: '100%', padding: '13px', borderRadius: 12,
+                    border: '1.5px solid var(--border)',
+                    background: scanning ? 'var(--bg-subtle)' : 'var(--bg-card)',
+                    color: scanning ? 'var(--text-3)' : 'var(--text-1)',
+                    ...F.semi, fontSize: 14, cursor: scanning ? 'wait' : 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    transition: 'all 150ms ease'
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                  </svg>
+                  {scanning
+                    ? (lang === 'fr' ? 'Analyse en cours\u2026' : 'Scanning\u2026')
+                    : (lang === 'fr' ? 'Scanner mon billet' : 'Scan my ticket')}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div style={{ animation: 'fadeUp .2s ease' }}>
+              <FG label={L.event}><SF value={title} onChange={setTitle} placeholder={lang === 'fr' ? 'ex. Paris \u2192 Tokyo' : 'e.g. Paris \u2192 Tokyo'} large autoFocus /></FG>
+              <FG label={L.sub}><SF value={subtitle} onChange={setSubtitle} placeholder={lang === 'fr' ? 'Compagnie, artiste\u2026' : 'Company, artist\u2026'} /></FG>
+              {title && <div style={{ marginTop: 14 }}><CardCompact ticket={preview} lang={lang} /></div>}
+            </div>
+          )}
+
+          {step === 3 && (
+            <div style={{ animation: 'fadeUp .2s ease' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 10 }}>
+                <FG label={lang === 'fr' ? 'Date' : 'Date'}><SF type="date" value={date} onChange={setDate} /></FG>
+                <FG label={lang === 'fr' ? 'Heure' : 'Time'}><SF type="time" value={time} onChange={setTime} /></FG>
+              </div>
+            </div>
+          )}
+
+          {step === 4 && (
+            <div style={{ animation: 'fadeUp .2s ease' }}>
+              <FG label={L.venue}><SF value={venue} onChange={setVenue} placeholder={lang === 'fr' ? 'Salle, gare, stade\u2026' : 'Venue, station\u2026'} /></FG>
+              <FG label={L.seat}><SF value={seat} onChange={setSeat} placeholder={lang === 'fr' ? 'Rang, place\u2026' : 'Row, seat\u2026'} /></FG>
+              {type === 'flight' && <FG label={L.gate}><SF value={gate} onChange={setGate} placeholder="ex. K42" /></FG>}
+              <FG label={L.ref}><SF value={reference} onChange={setReference} placeholder={lang === 'fr' ? 'Laissez vide pour auto' : 'Auto if empty'} mono /></FG>
+            </div>
+          )}
+
+          {step === 5 && (
+            <div style={{ animation: 'fadeUp .2s ease' }}>
+              <p style={{ ...F.medium, fontSize: 13, color: 'var(--text-2)', marginBottom: 14 }}>{L.preview}</p>
+              <CardLarge ticket={preview} lang={lang} />
+            </div>
+          )}
+          <div style={{ height: 20 }} />
+        </div>
+
+        <div style={{ padding: '10px 22px 26px', flexShrink: 0, borderTop: '1px solid var(--border)' }}>
+          <button
+            onClick={step === 5 ? confirm : next}
+            disabled={!canNext()}
+            style={{
+              width: '100%', padding: '14px', borderRadius: 12, border: 'none',
+              background: canNext() ? 'var(--text-1)' : 'var(--bg-subtle)',
+              color: canNext() ? '#fff' : 'var(--text-3)',
+              ...F.semi, fontSize: 15, cursor: canNext() ? 'pointer' : 'not-allowed',
+              transition: 'all 150ms ease',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
+            }}
+          >
+            {step === 5 ? <><Icon.Check s={15} c="currentColor" />{L.confirm}</> : <>{L.next}<Icon.ChevR s={15} c="currentColor" /></>}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── LIBRARY SCREEN ─────────────────────────────
+function LibraryScreen({ tickets, onOpen, lang = 'fr' }) {
+  const [showPast, setShowPast] = useState(false);
+
+  const groups = useMemo(() => {
+    const rel = tickets.filter(t => isPast(t) === showPast);
+    const g = {};
+    rel.forEach(t => { g[t.type] = g[t.type] || []; g[t.type].push(t); });
+    return Object.entries(g).sort((a, b) => b[1].length - a[1].length);
+  }, [tickets, showPast]);
+
+  return (
+    <div style={{ position: 'absolute', inset: '0 0 80px 0', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+      <div style={{ flexShrink: 0, paddingTop: 52, padding: '52px 24px 0' }}>
+        <div style={{ ...F.semi, fontSize: 10, letterSpacing: '.14em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 3 }}>
+          {lang === 'fr' ? 'BIBLIOTH\u00c8QUE' : 'LIBRARY'}
+        </div>
+        <h1 style={{ ...F.title, fontSize: 26, color: 'var(--text-1)', letterSpacing: '-.025em', marginBottom: 14 }}>
+          {showPast ? (lang === 'fr' ? 'Pass\u00e9s' : 'Past') : (lang === 'fr' ? '\u00c0 venir' : 'Upcoming')}
+        </h1>
+        <div style={{ display: 'flex', padding: 3, background: 'var(--bg-subtle)', borderRadius: 10, border: '1px solid var(--border)', marginBottom: 6 }}>
+          {[false, true].map(v => (
+            <button key={String(v)} onClick={() => setShowPast(v)} style={{
+              flex: 1, padding: '8px 0', border: 'none', borderRadius: 8,
+              background: showPast === v ? 'var(--bg-card)' : 'transparent',
+              color: showPast === v ? 'var(--text-1)' : 'var(--text-2)',
+              ...F[showPast === v ? 'semi' : 'body'], fontSize: 13,
+              cursor: 'pointer', transition: 'all 150ms',
+              boxShadow: showPast === v ? '0 1px 4px rgba(0,0,0,0.07)' : 'none'
+            }}>
+              {v ? (lang === 'fr' ? 'Pass\u00e9s' : 'Past') : (lang === 'fr' ? '\u00c0 venir' : 'Upcoming')}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="scroll" style={{ flex: 1, overflowY: 'auto', minHeight: 0, padding: '10px 24px 24px' }}>
+        {groups.length === 0 && (
+          <p style={{ padding: '40px 0', textAlign: 'center', ...F.body, fontSize: 14, color: 'var(--text-3)' }}>
+            {lang === 'fr' ? 'Aucun billet' : 'No tickets'}
+          </p>
+        )}
+        {groups.map(([type, list]) => {
+          const m = TYPE_META[type];
+          return (
+            <div key={type} style={{ marginBottom: 22 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 9 }}>
+                <div style={{ width: 28, height: 28, borderRadius: 8, background: m.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <TypeIcon type={type} s={15} c={m.color} />
+                </div>
+                <span style={{ ...F.semi, fontSize: 14, color: 'var(--text-1)' }}>{lang === 'fr' ? m.labelFr : m.label}</span>
+                <span style={{ marginLeft: 'auto', ...F.mono, fontSize: 11, color: 'var(--text-3)' }}>{String(list.length).padStart(2, '0')}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {list.map(t => <CardCompact key={t.id} ticket={t} onClick={() => onOpen(t)} lang={lang} />)}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── APP ────────────────────────────────────────
+function App() {
+  const [tickets, setTickets] = useState(() => TICKETS.map(t => ({ ...t, isUsed: t.isUsed || isPast(t) })));
+  const [tab, setTab] = useState('home');
+  const [openTicket, setOpenTicket] = useState(null);
+  const [addOpen, setAddOpen] = useState(false);
+
+  const handleAdd = (t) => {
+    setTickets(prev => [t, ...prev]);
+    setAddOpen(false);
+    setTab('home');
+  };
+
+  return (
+    <>
+      {tab === 'home' && <HomeScreen tickets={tickets} onOpen={setOpenTicket} onAdd={() => setAddOpen(true)} />}
+      {tab === 'library' && <LibraryScreen tickets={tickets} onOpen={setOpenTicket} />}
+      <TabBar tab={tab} setTab={setTab} onAdd={() => setAddOpen(true)} />
+      {openTicket && <TicketDetail ticket={openTicket} onClose={() => setOpenTicket(null)} />}
+      <AddSheet open={addOpen} onClose={() => setAddOpen(false)} onAdd={handleAdd} />
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

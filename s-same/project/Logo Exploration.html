@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sésame — Logo Exploration</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,400;1,600&family=Inter:wght@400;500;600&display=swap" crossorigin="anonymous">
+<style>
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: #F2F1EE;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.board {
+  max-width: 920px;
+  width: 100%;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.header h1 {
+  font-family: 'Fraunces', serif;
+  font-size: 42px;
+  font-weight: 600;
+  color: #1A1916;
+  margin-bottom: 8px;
+}
+
+.header p {
+  font-size: 15px;
+  font-weight: 500;
+  color: #8A8780;
+  letter-spacing: 0.3px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  margin-bottom: 56px;
+}
+
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.logo-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.icon-wrapper {
+  width: 200px;
+  height: 200px;
+  border-radius: 44px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.icon-wrapper:hover {
+  transform: translateY(-4px);
+}
+
+.logo-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1A1916;
+}
+
+.logo-card p {
+  font-size: 13px;
+  font-weight: 400;
+  color: #8A8780;
+}
+
+.color-system {
+  text-align: center;
+  padding-top: 32px;
+  border-top: 1px solid #E8E6E1;
+}
+
+.color-system h4 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #B8B5AF;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+}
+
+.colors {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.color-swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.color-swatch span {
+  font-size: 11px;
+  color: #8A8780;
+}
+</style>
+</head>
+<body>
+
+<div class="board">
+  <div class="header">
+    <h1>Sésame — Logo Exploration</h1>
+    <p>Select your direction</p>
+  </div>
+
+  <div class="grid">
+    <!-- Variation 1 — Arcane -->
+    <div class="logo-card">
+      <div class="icon-wrapper" style="background: #1A1916;">
+        <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- S shape made from ticket outline -->
+          <path d="M75 25 C85 25, 90 30, 90 40 C90 50, 85 55, 75 55 L50 55 C40 55, 35 60, 35 70 C35 80, 40 85, 50 85 L75 85 C85 85, 90 90, 90 100" 
+                stroke="#FAFAF8" 
+                stroke-width="3" 
+                stroke-linecap="round" 
+                fill="none"/>
+          <!-- Ticket perforations on left side -->
+          <circle cx="35" cy="40" r="2.5" fill="#FAFAF8"/>
+          <circle cx="35" cy="50" r="2.5" fill="#FAFAF8"/>
+          <circle cx="35" cy="60" r="2.5" fill="#FAFAF8"/>
+          <circle cx="35" cy="70" r="2.5" fill="#FAFAF8"/>
+          <circle cx="35" cy="80" r="2.5" fill="#FAFAF8"/>
+          <!-- Ticket perforations on right side -->
+          <circle cx="90" cy="35" r="2.5" fill="#FAFAF8"/>
+          <circle cx="90" cy="45" r="2.5" fill="#FAFAF8"/>
+          <circle cx="90" cy="55" r="2.5" fill="#FAFAF8"/>
+          <circle cx="90" cy="65" r="2.5" fill="#FAFAF8"/>
+          <circle cx="90" cy="75" r="2.5" fill="#FAFAF8"/>
+          <circle cx="90" cy="85" r="2.5" fill="#FAFAF8"/>
+        </svg>
+      </div>
+      <h3>Arcane</h3>
+      <p>Geometric · Perforated</p>
+    </div>
+
+    <!-- Variation 2 — Sésame -->
+    <div class="logo-card">
+      <div class="icon-wrapper" style="background: #FAFAF8;">
+        <svg width="140" height="60" viewBox="0 0 140 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <text x="70" y="42" 
+                font-family="Fraunces, serif" 
+                font-size="32" 
+                font-style="italic" 
+                font-weight="600"
+                fill="#1A1916" 
+                text-anchor="middle">Sésame</text>
+          <!-- Custom accent on é as tiny ticket -->
+          <rect x="57" y="16" width="6" height="4" rx="1" fill="#1A1916"/>
+        </svg>
+      </div>
+      <h3>Sésame</h3>
+      <p>Wordmark · Elegant</p>
+    </div>
+
+    <!-- Variation 3 — Portal -->
+    <div class="logo-card">
+      <div class="icon-wrapper" style="background: #D4E8F5;">
+        <svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Arch opening upward -->
+          <path d="M 20 70 L 20 50 Q 20 20, 50 20 Q 80 20, 80 50 L 80 70" 
+                stroke="#1A1916" 
+                stroke-width="5" 
+                stroke-linecap="round" 
+                fill="none"/>
+          <!-- Base line -->
+          <line x1="15" y1="70" x2="85" y2="70" stroke="#1A1916" stroke-width="5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <h3>Portal</h3>
+      <p>Minimal · Access</p>
+    </div>
+
+    <!-- Variation 4 — Stack -->
+    <div class="logo-card">
+      <div class="icon-wrapper" style="background: #EFE0F5;">
+        <svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Bottom ticket -->
+          <rect x="30" y="58" width="50" height="20" rx="3" fill="#1A1916" opacity="0.3"/>
+          <!-- Middle ticket -->
+          <rect x="28" y="48" width="50" height="20" rx="3" fill="#1A1916" opacity="0.5"/>
+          <!-- Top ticket with rounded corners -->
+          <rect x="26" y="38" width="50" height="20" rx="4" fill="#1A1916"/>
+          <!-- Notches on top ticket -->
+          <circle cx="30" cy="48" r="2" fill="#EFE0F5"/>
+          <circle cx="72" cy="48" r="2" fill="#EFE0F5"/>
+        </svg>
+      </div>
+      <h3>Stack</h3>
+      <p>Layered · Collection</p>
+    </div>
+
+    <!-- Variation 5 — Grain -->
+    <div class="logo-card">
+      <div class="icon-wrapper" style="background: #D5EDE4;">
+        <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="grain">
+              <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" result="noise"/>
+              <feColorMatrix in="noise" type="saturate" values="0"/>
+              <feComponentTransfer>
+                <feFuncA type="discrete" tableValues="0 0 0 0 1"/>
+              </feComponentTransfer>
+              <feBlend in="SourceGraphic" in2="noise" mode="multiply"/>
+            </filter>
+          </defs>
+          <!-- Circle -->
+          <circle cx="60" cy="60" r="48" stroke="#1A1916" stroke-width="2.5" fill="none"/>
+          <!-- S in Fraunces -->
+          <text x="60" y="80" 
+                font-family="Fraunces, serif" 
+                font-size="64" 
+                font-style="italic" 
+                font-weight="700"
+                fill="#1A1916" 
+                text-anchor="middle"
+                filter="url(#grain)">S</text>
+        </svg>
+      </div>
+      <h3>Grain</h3>
+      <p>Editorial · Organic</p>
+    </div>
+
+    <!-- Variation 6 — Ticket -->
+    <div class="logo-card">
+      <div class="icon-wrapper" style="background: #FDECD5;">
+        <svg width="138" height="100" viewBox="0 0 138 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Ticket shape with notches -->
+          <path d="M 10 10 L 128 10 L 128 38 Q 134 38, 134 44 Q 134 50, 128 50 L 128 90 L 10 90 L 10 50 Q 4 50, 4 44 Q 4 38, 10 38 Z" 
+                fill="#1A1916"/>
+          <!-- Center star -->
+          <path d="M 69 35 L 73 46 L 84 46 L 76 53 L 79 64 L 69 57 L 59 64 L 62 53 L 54 46 L 65 46 Z" 
+                fill="#FDECD5"/>
+        </svg>
+      </div>
+      <h3>Ticket</h3>
+      <p>Iconic · Bold</p>
+    </div>
+  </div>
+
+  <div class="color-system">
+    <h4>Color System</h4>
+    <div class="colors">
+      <div class="color-swatch">
+        <div class="swatch" style="background: #D4E8F5;"></div>
+        <span>Flight</span>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch" style="background: #EFE0F5;"></div>
+        <span>Concert</span>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch" style="background: #D5EDE4;"></div>
+        <span>Train</span>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch" style="background: #FDECD5;"></div>
+        <span>Sport</span>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch" style="background: #FDF5D5;"></div>
+        <span>Theater</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

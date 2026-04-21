@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sésame — Wallet</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" crossorigin="anonymous" />
+<style>
+/* ── TOKENS ────────────────────────────────── */
+:root {
+  --bg:           #FAFAF8;
+  --bg-card:      #FFFFFF;
+  --bg-subtle:    #F2F1EE;
+  --border:       #E8E6E1;
+  --text-1:       #1A1916;
+  --text-2:       #8A8780;
+  --text-3:       #B8B5AF;
+  --accent:       #1A1916;
+
+  --flight:       #D4E8F5;
+  --flight-text:  #0B3D5C;
+  --concert:      #EFE0F5;
+  --concert-text: #4A1D6E;
+  --train:        #D5EDE4;
+  --train-text:   #0D4A2E;
+  --sport:        #FDECD5;
+  --sport-text:   #6B3000;
+  --theater:      #FDF5D5;
+  --theater-text: #5C4500;
+  --other:        #EEE;
+  --other-text:   #444;
+
+  --radius-card:  20px;
+  --radius-sm:    12px;
+  --shadow-card:  0 4px 16px rgba(0,0,0,0.06);
+  --shadow-sm:    0 1px 4px rgba(0,0,0,0.07);
+  --ease:         cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── RESET ─────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: #DDDBD6; overflow: hidden; -webkit-font-smoothing: antialiased; }
+body { display: flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+button { cursor: pointer; -webkit-tap-highlight-color: transparent; font-family: inherit; }
+input, textarea { outline: none; font-family: inherit; }
+.scroll { scrollbar-width: none; -ms-overflow-style: none; }
+.scroll::-webkit-scrollbar { display: none; }
+
+/* ── PRINT MODE ────────────────────────────── */
+@media print {
+  @page { size: portrait; margin: 1cm; }
+  body { background: #fff; display: block; }
+  .frame { 
+    width: 100%; max-width: 100%;
+    height: auto; min-height: auto;
+    border-radius: 0; box-shadow: none;
+    page-break-inside: avoid;
+  }
+  .island, .status, .tweaks { display: none !important; }
+  .scroll { overflow: visible !important; }
+  #root { position: static !important; overflow: visible !important; height: auto !important; }
+  button { pointer-events: none; }
+}
+
+/* ── PHONE FRAME ────────────────────────────── */
+.frame {
+  position: relative;
+  width: min(390px, 100vw);
+  height: min(844px, calc(100vh - 24px));
+  background: var(--bg);
+  border-radius: 44px;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 10px #C8C5BF,
+    0 0 0 11px #B8B4AE,
+    0 28px 80px rgba(0,0,0,0.22);
+  isolation: isolate;
+}
+
+/* Dynamic island */
+.island {
+  position: absolute; top: 8px; left: 50%;
+  transform: translateX(-50%);
+  width: 110px; height: 30px;
+  background: #111; border-radius: 16px;
+  z-index: 30;
+}
+
+/* Status bar */
+.status {
+  position: absolute; top: 0; left: 0; right: 0; height: 48px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 28px 0;
+  font-family: 'Inter'; font-size: 14px; font-weight: 600;
+  color: var(--text-1); z-index: 25;
+}
+.status-icons { display: flex; gap: 5px; align-items: center; }
+
+/* ── TYPOGRAPHY ─────────────────────────────── */
+.f-serif { font-family: 'Fraunces', Georgia, serif; }
+.f-sans  { font-family: 'Inter', system-ui, sans-serif; }
+.f-mono  { font-family: 'IBM Plex Mono', monospace; }
+
+/* ── ANIMATIONS ─────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes sheetIn {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── TWEAKS PANEL ───────────────────────────── */
+.tweaks {
+  display: none;
+  position: fixed;
+  bottom: 24px; right: 24px;
+  width: 260px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  z-index: 9999;
+  font-family: 'Inter'; font-size: 13px; color: var(--text-1);
+}
+.tweaks.on { display: block; animation: fadeUp 0.2s var(--ease); }
+.tweaks h4 { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-2); margin-bottom: 12px; }
+.tweaks label { display: block; margin-bottom: 10px; }
+.tweaks label span { display: block; color: var(--text-2); font-size: 11px; margin-bottom: 4px; }
+.tweaks select {
+  width: 100%; padding: 7px 10px;
+  border: 1px solid var(--border); border-radius: 8px;
+  font-family: 'Inter'; font-size: 13px;
+  background: var(--bg); color: var(--text-1);
+}
+.tweaks input[type=text] {
+  width: 100%; padding: 7px 10px;
+  border: 1px solid var(--border); border-radius: 8px;
+  font-family: 'Inter'; font-size: 13px;
+  background: var(--bg); color: var(--text-1);
+}
+</style>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div class="frame" id="frame">
+  <div class="island"></div>
+  <div class="status">
+    <span>9:41</span>
+    <div class="status-icons">
+      <svg width="16" height="11" fill="none" viewBox="0 0 16 11"><path d="M8 2.2C10.6 2.2 12.9 3.2 14.6 4.9L16 3.5C13.9 1.3 11.1 0 8 0S2.1 1.3 0 3.5l1.4 1.4C3.1 3.2 5.4 2.2 8 2.2zM8 5.5c1.7 0 3.2.7 4.3 1.8l1.4-1.4C12.2 4.4 10.2 3.5 8 3.5S3.8 4.4 2.3 5.9l1.4 1.4C4.8 6.2 6.3 5.5 8 5.5zM8 8.8c.9 0 1.7.3 2.3.9L8 12 5.7 9.7C6.3 9.1 7.1 8.8 8 8.8z" fill="currentColor"/></svg>
+      <svg width="15" height="11" fill="none" viewBox="0 0 15 11"><rect x=".5" y="2" width="11" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.2"/><rect x="2" y="3.5" width="8" height="4" rx=".5" fill="currentColor"/><path d="M13 4.5v2a1.5 1.5 0 0 0 0-2z" fill="currentColor"/></svg>
+    </div>
+  </div>
+  <div id="root" style="position:absolute;inset:0;overflow:hidden;"></div>
+</div>
+
+<div class="tweaks" id="tweaks-panel">
+  <h4>Tweaks</h4>
+  <label>
+    <span>Affichage billets</span>
+    <select id="tw-sort">
+      <option value="date">Par date (défaut)</option>
+      <option value="type">Par type</option>
+    </select>
+  </label>
+  <label>
+    <span>Langue interface</span>
+    <select id="tw-lang">
+      <option value="fr">Français</option>
+      <option value="en">English</option>
+    </select>
+  </label>
+  <label>
+    <span>Nom affiché</span>
+    <input type="text" id="tw-name" value="Alex" />
+  </label>
+  <label>
+    <span>Densité des cards</span>
+    <select id="tw-density">
+      <option value="normal">Normale</option>
+      <option value="compact">Compacte</option>
+    </select>
+  </label>
+</div>
+
+<script>
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "sort": "date",
+  "lang": "fr",
+  "name": "Manu",
+  "density": "normal"
+}/*EDITMODE-END*/;
+window.__S = { tweaks: {...TWEAK_DEFAULTS}, subs: [] };
+window.__S.set = (patch) => {
+  Object.assign(window.__S.tweaks, patch);
+  window.__S.subs.forEach(f => f({...window.__S.tweaks}));
+  try { window.parent.postMessage({type:'__edit_mode_set_keys', edits: patch}, '*'); } catch(e){}
+};
+
+// Tweaks UI wiring
+const panel = document.getElementById('tweaks-panel');
+window.addEventListener('message', e => {
+  if (e.data?.type === '__activate_edit_mode') panel.classList.add('on');
+  if (e.data?.type === '__deactivate_edit_mode') panel.classList.remove('on');
+});
+window.parent.postMessage({type: '__edit_mode_available'}, '*');
+
+document.getElementById('tw-sort').value = TWEAK_DEFAULTS.sort;
+document.getElementById('tw-sort').onchange = e => window.__S.set({sort: e.target.value});
+document.getElementById('tw-lang').value = TWEAK_DEFAULTS.lang;
+document.getElementById('tw-lang').onchange = e => window.__S.set({lang: e.target.value});
+document.getElementById('tw-name').value = TWEAK_DEFAULTS.name;
+document.getElementById('tw-name').oninput = e => window.__S.set({name: e.target.value});
+document.getElementById('tw-density').value = TWEAK_DEFAULTS.density;
+document.getElementById('tw-density').onchange = e => window.__S.set({density: e.target.value});
+</script>
+
+<script type="text/babel" data-presets="react" src="s-data.jsx"></script>
+<script type="text/babel" data-presets="react" src="s-ui.jsx"></script>
+<script type="text/babel" data-presets="react" src="s-screens.jsx"></script>
+<script type="text/babel" data-presets="react" src="s-app.jsx"></script>
+
+<script type="text/babel">
+  // Auto-print after everything loads
+  (async () => {
+    await document.fonts.ready;
+    await new Promise(r => setTimeout(r, 800));
+    window.print();
+  })();
+</script>
+</body>
+</html>
